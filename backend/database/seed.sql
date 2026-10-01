@@ -6,7 +6,7 @@
 -- 1. Regional Reference Standard Laboratory (RRSL Ahmedabad)
 INSERT INTO laboratories (id, lab_code, name, accreditation_number, address, city, state, country_code)
 VALUES (
-    'a0000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
     'RRSL-AHMEDABAD',
     'Regional Reference Standard Laboratory, Ahmedabad',
     'NABL-LM-TC-2024-0891',
@@ -21,8 +21,8 @@ VALUES (
 INSERT INTO users (id, laboratory_id, email, password_hash, full_name, role, employee_id, accreditation_id, is_active)
 VALUES 
 (
-    'u0000000-0000-0000-0000-000000000001',
-    'a0000000-0000-0000-0000-000000000001',
+    '00000001-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
     'verma.amit@metrology.gov.in',
     '$2b$10$ep/0tq6kF6Vv4b8uJb1wtepI1oGv9G8u6U1Hk0eP.n9C0b1v4t3yq',
     'Amit Verma',
@@ -32,8 +32,8 @@ VALUES
     TRUE
 ),
 (
-    'u0000000-0000-0000-0000-000000000002',
-    'a0000000-0000-0000-0000-000000000001',
+    '00000001-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000001',
     'sharma.a@metrology.gov.in',
     '$2b$10$ep/0tq6kF6Vv4b8uJb1wtepI1oGv9G8u6U1Hk0eP.n9C0b1v4t3yq',
     'Dr. A. Sharma',
@@ -43,8 +43,8 @@ VALUES
     TRUE
 ),
 (
-    'u0000000-0000-0000-0000-000000000003',
-    'a0000000-0000-0000-0000-000000000001',
+    '00000001-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000001',
     'director@rrsl.gov.in',
     '$2b$10$ep/0tq6kF6Vv4b8uJb1wtepI1oGv9G8u6U1Hk0eP.n9C0b1v4t3yq',
     'Dr. Rajesh K. Patel',
@@ -58,7 +58,7 @@ VALUES
 INSERT INTO manufacturers (id, name, country_code, address, contact_person, contact_email, license_number)
 VALUES
 (
-    'm0000000-0000-0000-0000-000000000001',
+    '00000002-0000-0000-0000-000000000001',
     'Apex Metrology Instruments Ltd',
     'IN',
     'GIDC Electronics Zone, Sector 25, Gandhinagar, Gujarat',
@@ -67,7 +67,7 @@ VALUES
     'LM/MFG/GJ/2022/4412'
 ),
 (
-    'm0000000-0000-0000-0000-000000000002',
+    '00000002-0000-0000-0000-000000000002',
     'Delta Electronics Synthetic Corp',
     'IN',
     'Okhla Industrial Area Phase III, New Delhi',
@@ -84,8 +84,8 @@ INSERT INTO instrument_models (
 )
 VALUES
 (
-    'i0000000-0000-0000-0000-000000000001',
-    'm0000000-0000-0000-0000-000000000001',
+    '00000003-0000-0000-0000-000000000001',
+    '00000002-0000-0000-0000-000000000001',
     'Precision-Bench-B6',
     'High-Resolution Laboratory Bench Scale',
     'v1.4.2',
@@ -99,8 +99,8 @@ VALUES
     'kg'
 ),
 (
-    'i0000000-0000-0000-0000-000000000002',
-    'm0000000-0000-0000-0000-000000000002',
+    '00000003-0000-0000-0000-000000000002',
+    '00000002-0000-0000-0000-000000000002',
     'MarketPro-Compute-R15',
     'Retail Price-Computing Counter Scale',
     'v2.1.0',
@@ -118,8 +118,8 @@ VALUES
 INSERT INTO registered_specimens (id, instrument_model_id, serial_number, applicant_name, intake_date, condition_at_receipt)
 VALUES
 (
-    's0000000-0000-0000-0000-000000000001',
-    'i0000000-0000-0000-0000-000000000001',
+    '00000004-0000-0000-0000-000000000001',
+    '00000003-0000-0000-0000-000000000001',
     'SN-BS-26001',
     'Apex Metrology Instruments Ltd (Commercial Division)',
     CURRENT_DATE - INTERVAL '10 days',
@@ -134,7 +134,7 @@ INSERT INTO reference_standards (
 )
 VALUES
 (
-    'std00000-0000-0000-0000-000000000001',
+    '00000005-0000-0000-0000-000000000001',
     'STD-WT-001',
     'OIML Class F1 Stainless Steel Mass Set (1 mg to 20 kg)',
     'MASS_STANDARD',
@@ -150,7 +150,7 @@ VALUES
     'Primary Metrology Vault (Room 102)'
 ),
 (
-    'std00000-0000-0000-0000-000000000002',
+    '00000005-0000-0000-0000-000000000002',
     'STD-WT-002',
     'OIML Class E2 Ultra-Precision Analytical Mass Set (1 mg to 500 g)',
     'MASS_STANDARD',
@@ -166,7 +166,7 @@ VALUES
     'Micro-balance Cleanroom (Room 105)'
 ),
 (
-    'std00000-0000-0000-0000-000000000003',
+    '00000005-0000-0000-0000-000000000003',
     'STD-WT-003',
     'OIML Class M1 Cast Iron Working Block Weights (10 kg to 500 kg)',
     'MASS_STANDARD',
@@ -182,7 +182,7 @@ VALUES
     'Heavy Industrial Testing Bay (Bay 2)'
 ),
 (
-    'std00000-0000-0000-0000-000000000004',
+    '00000005-0000-0000-0000-000000000004',
     'STD-ENV-001',
     'Vaisala PTU300 Combined Digital Barometer & Hygrometer',
     'BAROMETER',
@@ -198,7 +198,7 @@ VALUES
     'Environmental Monitoring Bench 1'
 ),
 (
-    'std00000-0000-0000-0000-000000000005',
+    '00000005-0000-0000-0000-000000000005',
     'STD-EXP-001',
     'Secondary Working Class F2 Mass Set (100 g to 5 kg)',
     'MASS_STANDARD',
@@ -222,15 +222,15 @@ INSERT INTO type_evaluations (
 )
 VALUES
 (
-    'e0000000-0000-0000-0000-000000000001',
+    '00000006-0000-0000-0000-000000000001',
     'RRSL-2026-TE-0104',
     0,
-    's0000000-0000-0000-0000-000000000001',
+    '00000004-0000-0000-0000-000000000001',
     'OIML R 76-1:2006 (E)',
     'R76-2006-v1',
     'IN_TESTING',
-    'u0000000-0000-0000-0000-000000000002',
-    'u0000000-0000-0000-0000-000000000001',
+    '00000001-0000-0000-0000-000000000002',
+    '00000001-0000-0000-0000-000000000001',
     20.04,
     41.00,
     1003.00,
@@ -243,8 +243,8 @@ INSERT INTO evaluation_test_runs (
 )
 VALUES
 (
-    't0000000-0000-0000-0000-000000000001',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000001',
+    '00000006-0000-0000-0000-000000000001',
     'R76_ADMIN_MARKINGS',
     '3.10, 4.1',
     'Administrative & Markings Examination',
@@ -255,8 +255,8 @@ VALUES
     'PASS'
 ),
 (
-    't0000000-0000-0000-0000-000000000002',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000002',
+    '00000006-0000-0000-0000-000000000001',
     'R76_TECH_SEALING',
     '3.10, 4.1-18',
     'Technical Construction & Security Sealing',
@@ -267,8 +267,8 @@ VALUES
     'PASS'
 ),
 (
-    't0000000-0000-0000-0000-000000000003',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000003',
+    '00000006-0000-0000-0000-000000000001',
     'R76_WEIGH_INTRINSIC',
     '3.5.1, A.4.4',
     'Weighing Performance: Initial Intrinsic Error',
@@ -279,8 +279,8 @@ VALUES
     'PASS'
 ),
 (
-    't0000000-0000-0000-0000-000000000004',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000004',
+    '00000006-0000-0000-0000-000000000001',
     'R76_ECCENTRICITY',
     '3.6.2, A.4.7.1-3',
     'Eccentricity with Standard Weights',
@@ -291,8 +291,8 @@ VALUES
     'PASS'
 ),
 (
-    't0000000-0000-0000-0000-000000000005',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000005',
+    '00000006-0000-0000-0000-000000000001',
     'R76_ECC_ROLLING',
     '3.6.2.4, A.4.7.4',
     'Eccentricity with Rolling Load',
@@ -303,8 +303,8 @@ VALUES
     'NOT_APPLICABLE'
 ),
 (
-    't0000000-0000-0000-0000-000000000006',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000006',
+    '00000006-0000-0000-0000-000000000001',
     'R76_ECC_MOBILE',
     '3.6.2.5, A.4.7.5',
     'Eccentricity on Mobile / Suspended Instruments',
@@ -315,8 +315,8 @@ VALUES
     'NOT_APPLICABLE'
 ),
 (
-    't0000000-0000-0000-0000-000000000007',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000007',
+    '00000006-0000-0000-0000-000000000001',
     'R76_DISCRIMINATION',
     '3.8, A.4.8',
     'Discrimination Test (1.4d additional load)',
@@ -327,8 +327,8 @@ VALUES
     'PASS'
 ),
 (
-    't0000000-0000-0000-0000-000000000008',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000008',
+    '00000006-0000-0000-0000-000000000001',
     'R76_SENSITIVITY_NON_SELF',
     '3.7, A.4.9',
     'Sensitivity for Non-Self-Indicating Instruments',
@@ -339,8 +339,8 @@ VALUES
     'NOT_APPLICABLE'
 ),
 (
-    't0000000-0000-0000-0000-000000000009',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000009',
+    '00000006-0000-0000-0000-000000000001',
     'R76_REPEATABILITY',
     '3.6.1, A.4.10',
     'Type Examination Repeatability Test',
@@ -351,8 +351,8 @@ VALUES
     'PASS'
 ),
 (
-    't0000000-0000-0000-0000-000000000010',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000010',
+    '00000006-0000-0000-0000-000000000001',
     'R76_CREEP',
     '3.9.4.1, A.4.11.1',
     'Creep Test under Constant Load',
@@ -363,8 +363,8 @@ VALUES
     'PASS'
 ),
 (
-    't0000000-0000-0000-0000-000000000011',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000011',
+    '00000006-0000-0000-0000-000000000001',
     'R76_ZERO_RETURN',
     '3.9.4.2, A.4.11.2',
     'Zero Return Residual Error Test',
@@ -375,8 +375,8 @@ VALUES
     'PASS'
 ),
 (
-    't0000000-0000-0000-0000-000000000012',
-    'e0000000-0000-0000-0000-000000000001',
+    '00000007-0000-0000-0000-000000000012',
+    '00000006-0000-0000-0000-000000000001',
     'R76_EQUILIBRIUM_LOCK',
     '4.4.2, A.4.12',
     'Stability of Equilibrium Interlocking Test',
@@ -386,3 +386,4 @@ VALUES
     NULL,
     'PASS'
 ) ON CONFLICT (evaluation_id, test_code) DO NOTHING;
+
