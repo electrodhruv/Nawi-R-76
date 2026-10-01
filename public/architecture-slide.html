@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAWI-R76 System Architecture - SIH 16:9 Slide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #090D16;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #F8FAFC;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* 16:9 Slide Canvas */
+    .slide-canvas {
+      width: 1333px;
+      height: 750px;
+      background: radial-gradient(circle at 20% 15%, rgba(30, 58, 138, 0.25) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 85%, rgba(13, 148, 136, 0.2) 0%, transparent 45%),
+                  #0B1120;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 36px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Slide Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 16px;
+    }
+    .header-left .tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #38BDF8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+    .header-left h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.5px;
+    }
+    .header-right {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #94A3B8;
+      text-align: right;
+    }
+    .header-right span {
+      color: #10B981;
+      font-weight: 600;
+    }
+
+    /* 4-Column Pipeline Grid */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin: 24px 0;
+      position: relative;
+      flex-grow: 1;
+      align-items: stretch;
+    }
+
+    /* Column Container */
+    .column-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      backdrop-filter: blur(12px);
+      position: relative;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .column-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Column Header */
+    .col-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 10px;
+      margin-bottom: 4px;
+    }
+    .col-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .col-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #E2E8F0;
+    }
+
+    /* Colors per column */
+    .col-1 .col-num { background: rgba(56, 189, 248, 0.2); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .col-2 .col-num { background: rgba(168, 85, 247, 0.2); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.4); }
+    .col-3 .col-num { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .col-4 .col-num { background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .col-1 { border-top: 3px solid #38BDF8; }
+    .col-2 { border-top: 3px solid #A855F7; }
+    .col-3 { border-top: 3px solid #F59E0B; }
+    .col-4 { border-top: 3px solid #10B981; }
+
+    /* Modules inside Column */
+    .module-item {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .module-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .module-icon {
+      font-size: 16px;
+    }
+    .module-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+    .module-desc {
+      font-size: 11px;
+      color: #94A3B8;
+      line-height: 1.4;
+    }
+    .chip {
+      display: inline-block;
+      align-self: flex-start;
+      margin-top: 4px;
+      font-size: 9.5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #CBD5E1;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .chip.cyan { background: rgba(56, 189, 248, 0.15); color: #38BDF8; border-color: rgba(56, 189, 248, 0.3); }
+    .chip.purple { background: rgba(168, 85, 247, 0.15); color: #C084FC; border-color: rgba(168, 85, 247, 0.3); }
+    .chip.amber { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border-color: rgba(245, 158, 11, 0.3); }
+    .chip.emerald { background: rgba(16, 185, 129, 0.15); color: #34D399; border-color: rgba(16, 185, 129, 0.3); }
+
+    /* Footer Stats & Highlights */
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 12px;
+    }
+    .metric {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .metric-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #38BDF8;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .metric-label {
+      color: #94A3B8;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 16:9 Presentation Slide Canvas -->
+  <div class="slide-canvas">
+    
+    <!-- Slide Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="tag">OIML R 76-1 & 76-2 Engine Architecture</div>
+        <h1>System Architecture & Technical Data Pipeline</h1>
+      </div>
+      <div class="header-right">
+        Regional Reference Standard Laboratory &bull; <span>RRSL Engine v2.4</span>
+      </div>
+    </div>
+
+    <!-- 4-Column Pipeline Grid -->
+    <div class="pipeline-grid">
+      
+      <!-- Col 1: Intake & Interface -->
+      <div class="column-card col-1">
+        <div class="col-header">
+          <div class="col-num">01</div>
+          <div class="col-title">Intake & UI Layer</div>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">💻</span>
+            <span class="module-name">Responsive Metrology UI</span>
+          </div>
+          <p class="module-desc">Step 1 to 6 workflow stepper with dynamic field masking.</p>
+          <span class="chip cyan">Next.js 14 &bull; Tailwind</span>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">📋</span>
+            <span class="module-name">OIML Test Workspaces</span>
+          </div>
+          <p class="module-desc">A.4.4 Intrinsic, A.4.7 Eccentricity & A.4.10 Repeatability forms.</p>
+          <span class="chip cyan">Dynamic Form Engine</span>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">📷</span>
+            <span class="module-name">Evidence Capture</span>
+          </div>
+          <p class="module-desc">Live indicator display & nameplate photos with SHA-256 seal.</p>
+          <span class="chip cyan">HTML5 Camera / Canvas</span>
+        </div>
+      </div>
+
+      <!-- Col 2: Gateway & State -->
+      <div class="column-card col-2">
+        <div class="col-header">
+          <div class="col-num">02</div>
+          <div class="col-title">Gateway & State</div>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">⚙️</span>
+            <span class="module-name">API Gateway Router</span>
+          </div>
+          <p class="module-desc">Stateless Next.js Edge route handlers & payload sanitizers.</p>
+          <span class="chip purple">Node.js HTTP Handler</span>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">🔄</span>
+            <span class="module-name">Workflow State Engine</span>
+          </div>
+          <p class="module-desc">Context machine managing TestRunRecords, observations & retests.</p>
+          <span class="chip purple">TypeScript State Machine</span>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">🔐</span>
+            <span class="module-name">Role Access & Audit</span>
+          </div>
+          <p class="module-desc">Strict segregation: Testing Officer vs Technical Peer Reviewer.</p>
+          <span class="chip purple">Role-Based Audit Trail</span>
+        </div>
+      </div>
+
+      <!-- Col 3: Dual Engines & Gatekeeper -->
+      <div class="column-card col-3">
+        <div class="col-header">
+          <div class="col-num">03</div>
+          <div class="col-title">Core Metrology & AI</div>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">🧮</span>
+            <span class="module-name">Deterministic OIML Math</span>
+          </div>
+          <p class="module-desc">True Load P = I + 0.5e - dL & Table 6 MPE limits evaluator.</p>
+          <span class="chip amber">Deterministic Physics</span>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">👁️</span>
+            <span class="module-name">OCR Vision & Anomaly</span>
+          </div>
+          <p class="module-desc">Extracts scale display digits; detects photo vs manual reading shifts.</p>
+          <span class="chip amber">Tesseract.js &bull; Heuristics</span>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">🛡️</span>
+            <span class="module-name">Finalization Gatekeeper</span>
+          </div>
+          <p class="module-desc">Itemized blocker checks: rejects incomplete tests or missing photos.</p>
+          <span class="chip amber">Automated Quality Gate</span>
+        </div>
+      </div>
+
+      <!-- Col 4: Trust, QR & Reporting -->
+      <div class="column-card col-4">
+        <div class="col-header">
+          <div class="col-num">04</div>
+          <div class="col-title">Trust & Reporting</div>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">🔑</span>
+            <span class="module-name">Cryptographic Signer</span>
+          </div>
+          <p class="module-desc">Canonical JSON RFC 8785 & RSA-2048 document digital signature.</p>
+          <span class="chip emerald">Node Crypto &bull; SHA-256</span>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">📱</span>
+            <span class="module-name">Page-1 QR Generator</span>
+          </div>
+          <p class="module-desc">Tamper-evident verification stamp scanable offline & online.</p>
+          <span class="chip emerald">Clean URL &bull; No Localhost</span>
+        </div>
+
+        <div class="module-item">
+          <div class="module-head">
+            <span class="module-icon">📄</span>
+            <span class="module-name">OIML R 76-2 Exports</span>
+          </div>
+          <p class="module-desc">Bilingual laboratory PDF & editable Microsoft DOCX documents.</p>
+          <span class="chip emerald">jsPDF &bull; docx library</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Slide Footer Metrics Bar -->
+    <div class="slide-footer">
+      <div class="metric">
+        <div class="metric-val">100%</div>
+        <div class="metric-label">OIML R 76-1 Formula Compliance</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val">0</div>
+        <div class="metric-label">Subjective Overrides Allowed</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val">&lt; 1.5s</div>
+        <div class="metric-label">End-to-End PDF & QR Generation</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val">SHA-256</div>
+        <div class="metric-label">Cryptographic Evidence Integrity</div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

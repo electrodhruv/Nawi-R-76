@@ -1,0 +1,581 @@
+// Prisma Schema for NAWI-R76 Type Evaluation Laboratory System
+// In accordance with OIML R 76-1:2006 (E) & OIML R 76-2:2007 (E)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+enum UserRole {
+  ADMIN
+  LAB_MANAGER
+  TESTING_OFFICER       // Metrologist executing tests
+  TECHNICAL_REVIEWER    // Senior peer reviewer
+  APPROVING_SIGNATORY   // Laboratory Director / Legal Signatory
+  GUEST_AUDITOR
+}
+
+enum AccuracyClass {
+  CLASS_I
+  CLASS_II
+  CLASS_III
+  CLASS_IIII
+}
+
+enum RangeType {
+  SINGLE
+  MULTI_INTERVAL
+  MULTI_RANGE
+}
+
+enum TareType {
+  SUBTRACTIVE
+  ADDITIVE
+  PRESET
+  NONE
+}
+
+enum PowerSupplyType {
+  MAINS_AC
+  EXTERNAL_AC_DC
+  BATTERY_INTERNAL
+  ROAD_VEHICLE_BATTERY
+  DUAL_MAINS_BATTERY
+}
+
+enum ReceptorType {
+  STANDARD_PAN
+  SPECIAL_TANK_HOPPER
+  ROLLING_TRACK
+  MOBILE_SCALE
+}
+
+enum EvaluationStatus {
+  DRAFT
+  PLAN_CONFIGURED
+  IN_TESTING
+  PENDING_REVIEW
+  REVISIONS_REQUESTED
+  APPROVED
+  REPORT_ISSUED
+  SUPERSEDED
+}
+
+enum TestCategory {
+  METROLOGICAL
+  ENVIRONMENTAL
+  ELECTRICAL
+  CONSTRUCTION
+}
+
+enum TestRunStatus {
+  NOT_TESTED
+  INCOMPLETE
+  PASS
+  FAIL
+  INCONCLUSIVE
+  NOT_APPLICABLE
+}
+
+enum LoadDirection {
+  INCREASING
+  DECREASING
+  FORWARD_TRAVERSE
+  REVERSE_TRAVERSE
+  STATIC
+}
+
+enum ComplianceStatus {
+  PASS
+  FAIL
+}
+
+enum StandardWeightClass {
+  E1
+  E2
+  F1
+  F2
+  M1
+  M1_2
+  M2
+  M2_3
+  M3
+  NOT_APPLICABLE
+}
+
+enum StandardType {
+  WEIGHT_SET
+  SINGLE_MASS
+  ENVIRONMENTAL_CHAMBER
+  HYGROMETER
+  VOLTAGE_SUPPLY
+  ROLLING_LOAD_AXLE
+}
+
+enum EvidenceUploadMethod {
+  IN_APP_CAPTURE
+  GALLERY_UPLOAD
+}
+
+enum EvidenceStatus {
+  UNVERIFIED
+  CONSISTENT
+  DISCREPANCY
+  MANUAL_REVIEW
+  VERIFIED_BY_REVIEWER
+}
+
+enum ReviewStage {
+  PEER_REVIEW
+  FINAL_APPROVAL
+}
+
+enum ReviewDecision {
+  ACCEPTED
+  REVISIONS_REQUESTED
+  REJECTED
+}
+
+enum ReportDocumentType {
+  OIML_R76_2_TRF
+  SUMMARY_CERTIFICATE
+}
+
+// ============================================================================
+// Core User & Laboratory Registry
+// ============================================================================
+
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  fullName          String
+  role              UserRole     @default(TESTING_OFFICER)
+  accreditationId   String?      // e.g. NABL / OIML Metrologist Reg Number
+  signatureHash     String?      // Digital signoff public key / certificate hash
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  // Relations
+  ledEvaluations    TypeEvaluation[]      @relation("LeadMetrologist")
+  reviewedEvaluations TypeEvaluation[]    @relation("TechnicalReviewer")
+  signedEvaluations TypeEvaluation[]      @relation("ApprovingSignatory")
+  executedTestRuns  EvaluationTestRun[]   @relation("TestExecutor")
+  uploadedEvidence  EvidenceFile[]        @relation("EvidenceUploader")
+  reviewSteps       ReviewWorkflowStep[]  @relation("ReviewerSteps")
+  auditLogs         AuditLog[]            @relation("AuditActor")
+
+  @@map("users")
+}
+
+model Manufacturer {
+  id                String            @id @default(uuid())
+  name              String            @unique
+  countryCode       String            // ISO 2-letter country code
+  address           String
+  contactPerson     String?
+  contactEmail      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  instruments       InstrumentModel[]
+
+  @@map("manufacturers")
+}
+
+// ============================================================================
+// Instrument Specification & Multi-Interval Configuration
+// ============================================================================
+
+model InstrumentModel {
+  id                       String            @id @default(uuid())
+  manufacturerId           String
+  modelName                String
+  tradeName                String?
+  softwareVersion          String?
+  serialNumberPattern      String?
+  accuracyClass            AccuracyClass
+  rangeType                RangeType         @default(SINGLE)
+
+  // Metrological primary characteristics
+  maxCapacity              Decimal           @db.Decimal(14, 4) // Max (in primary unit)
+  minCapacity              Decimal           @db.Decimal(14, 4) // Min (in primary unit)
+  verificationInterval_e   Decimal           @db.Decimal(14, 4) // e
+  scaleInterval_d          Decimal           @db.Decimal(14, 4) // d
+  numberOfIntervals_n      Int               // n = Max / e
+  primaryUnit              String            @default("kg")     // "kg", "g", "mg"
+
+  // Environmental & Electrical Specifications
+  specifiedTempMin         Decimal?          @db.Decimal(5, 2)  // e.g. -10 °C
+  specifiedTempMax         Decimal?          @db.Decimal(5, 2)  // e.g. +40 °C
+  powerSupplyType          PowerSupplyType   @default(MAINS_AC)
+  nominalVoltage           Decimal?          @db.Decimal(6, 2)  // e.g. 230 V
+  batteryCutoffVoltage     Decimal?          @db.Decimal(6, 2)  // For A.5.4.3
+
+  // Load Receptor & Geometric Configuration
+  receptorType             ReceptorType      @default(STANDARD_PAN)
+  numberOfSupportPoints    Int               @default(4)        // Supports for A.4.7.1-3
+  numberOfReceptorSections Int               @default(1)        // Sections for A.4.7.4
+  isBidirectionalTraffic   Boolean           @default(false)    // Bidirectional rolling load
+
+  tareType                 TareType          @default(SUBTRACTIVE)
+  hasAutomaticLeveling     Boolean           @default(false)
+  isElectronic             Boolean           @default(true)
+
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+
+  // Relations
+  manufacturer             Manufacturer      @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  partialRanges            PartialWeighingRange[]
+  evaluations              TypeEvaluation[]
+
+  @@unique([manufacturerId, modelName])
+  @@map("instrument_models")
+}
+
+model PartialWeighingRange {
+  id                       String            @id @default(uuid())
+  instrumentId             String
+  rangeIndex               Int               // 1, 2, ...
+  minCapacity_i            Decimal           @db.Decimal(14, 4)
+  maxCapacity_i            Decimal           @db.Decimal(14, 4)
+  verificationInterval_ei  Decimal           @db.Decimal(14, 4)
+  scaleInterval_di         Decimal           @db.Decimal(14, 4)
+  numberOfIntervals_ni     Int
+
+  instrument               InstrumentModel   @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+
+  @@unique([instrumentId, rangeIndex])
+  @@map("partial_weighing_ranges")
+}
+
+// ============================================================================
+// Type Evaluation Lifecycle & Versioning
+// ============================================================================
+
+model TypeEvaluation {
+  id                   String              @id @default(uuid())
+  evaluationNumber     String              @unique // e.g. RRSL-2026-TE-0104
+  revisionNumber       Int                 @default(1)
+  parentEvaluationId   String?             // Self-reference for post-approval revisions
+  instrumentId         String
+
+  // Version-Pinned Metrology Standard
+  standard             String              @default("OIML R 76-1")
+  standardVersion      String              @default("2006 (E)")
+  rulePackVersion      String              @default("R76-2006-v1")
+
+  status               EvaluationStatus    @default(DRAFT)
+
+  // Lead personnel
+  leadMetrologistId    String
+  reviewerId           String?
+  signatoryId          String?
+
+  startedAt            DateTime?
+  completedAt          DateTime?
+  approvedAt           DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  // Relations
+  instrument           InstrumentModel     @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  leadMetrologist      User                @relation("LeadMetrologist", fields: [leadMetrologistId], references: [id], onDelete: Restrict)
+  reviewer             User?               @relation("TechnicalReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  signatory            User?               @relation("ApprovingSignatory", fields: [signatoryId], references: [id], onDelete: SetNull)
+  parentEvaluation     TypeEvaluation?     @relation("EvaluationRevisions", fields: [parentEvaluationId], references: [id], onDelete: SetNull)
+  childRevisions       TypeEvaluation[]    @relation("EvaluationRevisions")
+
+  testRuns             EvaluationTestRun[]
+  evidenceFiles        EvidenceFile[]
+  reviewSteps          ReviewWorkflowStep[]
+  reports              EvaluationReport[]
+  auditLogs            AuditLog[]
+
+  @@index([status])
+  @@index([evaluationNumber])
+  @@map("type_evaluations")
+}
+
+// ============================================================================
+// Test Definitions & Execution Runs
+// ============================================================================
+
+model TestDefinition {
+  id                   String              @id @default(uuid())
+  testCode             String              @unique // e.g. R76_WEIGH_INTRINSIC, R76_REPEATABILITY
+  clauseReference      String              // e.g. A.4.4, A.4.10, A.4.7.1-3
+  title                String
+  category             TestCategory        @default(METROLOGICAL)
+  isMandatory          Boolean             @default(true)
+  declarativeProcedure Json                // Strictly validated DeclarativeProcedureDefinition
+
+  testRuns             EvaluationTestRun[]
+
+  @@map("test_definitions")
+}
+
+model EvaluationTestRun {
+  id                      String                  @id @default(uuid())
+  evaluationId            String
+  testDefinitionId        String
+  executionOrder          Int
+  status                  TestRunStatus           @default(NOT_TESTED)
+  exclusionJustification  String?                 // Mandatory if status == NOT_APPLICABLE
+  testLoadPlan            Json?                   // Machine-readable TestLoadPlan
+  creepObservationRecords Json?                   // Timestamps & drift records for A.4.11
+  executedById            String?
+  startedAt               DateTime?
+  completedAt             DateTime?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  // Relations
+  evaluation              TypeEvaluation          @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  testDefinition          TestDefinition          @relation(fields: [testDefinitionId], references: [id], onDelete: Restrict)
+  executedBy              User?                   @relation("TestExecutor", fields: [executedById], references: [id], onDelete: SetNull)
+
+  observationPoints       ObservationPoint[]
+  equipmentLinks          TestRunEquipmentLink[]
+  environmentalConditions EnvironmentalCondition[]
+  evidenceFiles           EvidenceFile[]
+
+  @@unique([evaluationId, testDefinitionId])
+  @@index([status])
+  @@map("evaluation_test_runs")
+}
+
+model ObservationPoint {
+  id                   String              @id @default(uuid())
+  testRunId            String
+  seriesIndex          Int                 @default(1) // 1 for 50% Max, 2 for 100% Max, etc.
+  stepIndex            Int                 // Sequence within series
+  direction            LoadDirection       @default(INCREASING)
+
+  // Raw inputs (from Metrologist)
+  nominalLoad_L        Decimal             @db.Decimal(14, 4)
+  indicatedValue_I     Decimal             @db.Decimal(14, 4)
+  turningPointLoad_dL  Decimal             @db.Decimal(14, 4)
+
+  // Server-Authoritative calculated values
+  calculated_P         Decimal             @db.Decimal(14, 4) // P = I + 0.5e - dL
+  error_E              Decimal             @db.Decimal(14, 4) // E = P - L
+  zeroError_E0         Decimal             @default(0) @db.Decimal(14, 4)
+  correctedError_Ec    Decimal             @db.Decimal(14, 4) // Ec = E - E0
+  applicableMpe        Decimal             @db.Decimal(14, 4) // Derived Table 6 MPE
+  complianceResult     ComplianceStatus    @default(PASS)
+  isZeroCheck          Boolean             @default(false)
+  remarks              String?
+  createdAt            DateTime            @default(now())
+
+  testRun              EvaluationTestRun   @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+  evidenceLinks        EvidenceObservationLink[]
+
+  @@index([testRunId, seriesIndex, stepIndex])
+  @@map("observation_points")
+}
+
+// ============================================================================
+// Reference Standards & Calibration Traceability (Clause 3.7.1)
+// ============================================================================
+
+model ReferenceStandard {
+  id                   String              @id @default(uuid())
+  serialNumber         String              @unique
+  name                 String
+  standardType         StandardType        @default(WEIGHT_SET)
+  weightClass          StandardWeightClass @default(F1)
+  nominalMass          Decimal             @db.Decimal(14, 4)
+  conventionalMass     Decimal             @db.Decimal(14, 4)
+  standardError        Decimal?            @db.Decimal(14, 6) // Clause 3.7.1 error
+  expandedUncertainty_U Decimal?           @db.Decimal(14, 6) // Clause 3.7.1 E2 U
+  coverageFactor_k     Decimal             @default(2.0) @db.Decimal(4, 2)
+  certificateNumber    String
+  calibratedBy         String              // Accredited Calibration Lab
+  calibratedAt         DateTime
+  validUntil           DateTime
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  equipmentLinks       TestRunEquipmentLink[]
+
+  @@map("reference_standards")
+}
+
+model TestRunEquipmentLink {
+  id                   String              @id @default(uuid())
+  testRunId            String
+  referenceStandardId  String
+  assignedAt           DateTime            @default(now())
+
+  testRun              EvaluationTestRun   @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+  referenceStandard    ReferenceStandard   @relation(fields: [referenceStandardId], references: [id], onDelete: Restrict)
+
+  @@unique([testRunId, referenceStandardId])
+  @@map("test_run_equipment_links")
+}
+
+model EnvironmentalCondition {
+  id                   String              @id @default(uuid())
+  testRunId            String
+  temperatureCelsius   Decimal             @db.Decimal(5, 2)
+  relativeHumidityPct  Decimal             @db.Decimal(5, 2)
+  atmosphericPressureHpa Decimal?          @db.Decimal(6, 2)
+  supplyVoltage        Decimal?            @db.Decimal(6, 2)
+  recordedAt           DateTime            @default(now())
+
+  testRun              EvaluationTestRun   @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+
+  @@map("environmental_conditions")
+}
+
+// ============================================================================
+// Evidence Verification Architecture & Assisted OCR
+// ============================================================================
+
+model EvidenceFile {
+  id                   String              @id @default(uuid())
+  evaluationId         String
+  testRunId            String?
+  uploaderId           String
+  sessionId            String?             // Active capture session ID
+  uploadMethod         EvidenceUploadMethod @default(IN_APP_CAPTURE)
+
+  storageUrl           String              // Object storage URL / path
+  serverHashSha256     String              @db.Char(64) // Authoritative SHA-256
+  clientPreliminaryHash String?            @db.Char(64) // Advisory client hash
+  mimeType             String
+  fileSizeBytes        BigInt
+  capturedAt           DateTime?           // Client camera timestamp
+  receivedAt           DateTime            @default(now()) // Authoritative server timestamp
+
+  status               EvidenceStatus      @default(UNVERIFIED)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  // Relations
+  evaluation           TypeEvaluation      @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  testRun              EvaluationTestRun?  @relation(fields: [testRunId], references: [id], onDelete: SetNull)
+  uploader             User                @relation("EvidenceUploader", fields: [uploaderId], references: [id], onDelete: Restrict)
+
+  metadata             EvidenceMetadata?
+  ocrResults           EvidenceOCRResult[]
+  observationLinks     EvidenceObservationLink[]
+
+  @@index([serverHashSha256])
+  @@index([evaluationId, testRunId])
+  @@map("evidence_files")
+}
+
+model EvidenceMetadata {
+  id                   String              @id @default(uuid())
+  evidenceFileId       String              @unique
+  deviceModel          String?
+  cameraMake           String?
+  clientIp             String?
+  gpsLatitude          Decimal?            @db.Decimal(10, 7)
+  gpsLongitude         Decimal?            @db.Decimal(10, 7)
+  notes                String?
+
+  evidenceFile         EvidenceFile        @relation(fields: [evidenceFileId], references: [id], onDelete: Cascade)
+
+  @@map("evidence_metadata")
+}
+
+model EvidenceOCRResult {
+  id                   String              @id @default(uuid())
+  evidenceFileId       String
+  extractedValue       String              // Extracted numeric display string
+  extractedUnit        String?             // "kg", "g", etc.
+  confidenceScore      Decimal             @db.Decimal(5, 4) // 0.0000 to 1.0000
+  boundingBoxJson      Json?               // Normalized bounding polygon
+  rawOcrText           String?
+  processedAt          DateTime            @default(now())
+
+  evidenceFile         EvidenceFile        @relation(fields: [evidenceFileId], references: [id], onDelete: Cascade)
+
+  @@map("evidence_ocr_results")
+}
+
+model EvidenceObservationLink {
+  id                   String              @id @default(uuid())
+  evidenceFileId       String
+  observationPointId   String
+  isDiscrepancy        Boolean             @default(false)
+  discrepancyDelta     Decimal?            @db.Decimal(14, 4)
+  reviewerNotes        String?
+
+  evidenceFile         EvidenceFile        @relation(fields: [evidenceFileId], references: [id], onDelete: Cascade)
+  observationPoint     ObservationPoint    @relation(fields: [observationPointId], references: [id], onDelete: Cascade)
+
+  @@unique([evidenceFileId, observationPointId])
+  @@map("evidence_observation_links")
+}
+
+// ============================================================================
+// Workflow, Reviews & Immutable Audit Trail
+// ============================================================================
+
+model ReviewWorkflowStep {
+  id                   String              @id @default(uuid())
+  evaluationId         String
+  reviewerId           String
+  stage                ReviewStage         @default(PEER_REVIEW)
+  decision             ReviewDecision      @default(ACCEPTED)
+  comments             String
+  signatureHash        String?             // Cryptographic reviewer signature
+  decidedAt            DateTime            @default(now())
+
+  evaluation           TypeEvaluation      @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  reviewer             User                @relation("ReviewerSteps", fields: [reviewerId], references: [id], onDelete: Restrict)
+
+  @@map("review_workflow_steps")
+}
+
+model AuditLog {
+  id                   String              @id @default(uuid())
+  actorId              String
+  evaluationId         String?
+  entityType           String              // "InstrumentModel", "ObservationPoint", etc.
+  entityId             String
+  action               String              // "CREATE", "UPDATE", "STATE_TRANSITION"
+  previousStateJson    Json?
+  newStateJson         Json?
+  changeReason         String              // Mandatory justification
+  clientIp             String?
+  rulePackVersion      String?             // Pinned rule pack during edit
+  createdAt            DateTime            @default(now())
+
+  actor                User                @relation("AuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  evaluation           TypeEvaluation?     @relation(fields: [evaluationId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([evaluationId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model EvaluationReport {
+  id                   String              @id @default(uuid())
+  evaluationId         String
+  reportNumber         String              @unique
+  documentType         ReportDocumentType  @default(OIML_R76_2_TRF)
+  fileFormat           String              // "PDF" | "DOCX"
+  storageUrl           String
+  fileHashSha256       String              @db.Char(64)
+  version              Int                 @default(1)
+  generatedAt          DateTime            @default(now())
+
+  evaluation           TypeEvaluation      @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@map("evaluation_reports")
+}
